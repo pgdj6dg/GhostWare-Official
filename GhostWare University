@@ -1,139 +1,36 @@
-const ALLOW = [
-  "https://raw.githubusercontent.com/pgdj6dg/",
-  "https://gist.githubusercontent.com/pgdj6dg/"
-];
-
-const CATALOG_URLS = [
-  "https://raw.githubusercontent.com/pgdj6dg/hub/main/hub_catalog.json"
-];
-
-const qs = s => document.querySelector(s);
-const qsa = (s, el = document) => [...el.querySelectorAll(s)];
-const grid = qs("#grid");
-const groupsEl = qs("#groups");
-const searchEl = qs("#search");
-const cardTpl = qs("#card-tpl");
-
-let catalog = {};
-let flat = [];
-let currentGroup = "All";
-let currentQuery = "";
-
-function isAllowed(url) {
-  return ALLOW.some(p => url.startsWith(p));
+local ALLOW={"https://raw.githubusercontent.com/pgdj6dg/","https://gist.githubusercontent.com/pgdj6dg/"}
+local CATALOG={
+ {name="SPEEDZ HUB",url="https://raw.githubusercontent.com/pgdj6dg/lolok/main/SPEEDZ%20HUB"},
+ {name="GhostWare University",url="https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/main/GhostWare%20University"}
 }
+local SELECT=1
 
-async function fetchText(url) {
-  const r = await fetch(url, { cache: "no-store" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.text();
-}
+local function isAllowed(u)
+ for _,p in ipairs(ALLOW) do if string.sub(u,1,#p)==p then return true end end
+ return false
+end
 
-async function fetchJSON(url) {
-  const t = await fetchText(url);
-  return JSON.parse(t);
-}
+local function httpget(u)
+ local ok,res=pcall(function() return game:HttpGet(u) end)
+ if ok and type(res)=="string" and #res>0 then return res end
+ if http_request then
+  local r=http_request({Url=u,Method="GET"})
+  if r and r.Body then return r.Body end
+ end
+ if syn and syn.request then
+  local r=syn.request({Url=u,Method="GET"})
+  if r and r.Body then return r.Body end
+ end
+ return nil
+end
 
-async function loadCatalog() {
-  const merged = {};
-  for (const u of CATALOG_URLS) {
-    try {
-      const j = await fetchJSON(u);
-      for (const [group, items] of Object.entries(j || {})) {
-        merged[group] = merged[group] || [];
-        for (const it of items) {
-          if (!it || typeof it.url !== "string" || typeof it.name !== "string") continue;
-          if (!isAllowed(it.url)) continue;
-          merged[group].push({
-            name: it.name,
-            url: it.url,
-            desc: it.desc || "",
-            icon: it.icon || "📄",
-            game: group
-          });
-        }
-      }
-    } catch (e) {
-      console.warn("Catalog fetch failed:", u, e);
-    }
-  }
-  return merged;
-}
+local function run(u)
+ if not isAllowed(u) then return end
+ local s=httpget(u); if not s then return end
+ local f,err=loadstring(s); if not f then return end
+ local ok,e=pcall(f); if not ok then return end
+end
 
-function rebuildGroups() {
-  groupsEl.innerHTML = "";
-  const keys = ["All", ...Object.keys(catalog).sort()];
-  for (const k of keys) {
-    const btn = document.createElement("button");
-    btn.textContent = k;
-    if (k === currentGroup) btn.classList.add("active");
-    btn.addEventListener("click", () => {
-      currentGroup = k;
-      rebuildGroups();
-      render();
-    });
-    groupsEl.appendChild(btn);
-  }
-}
-
-function matchesQuery(item, q) {
-  if (!q) return true;
-  const s = `${item.name} ${item.game} ${item.desc}`.toLowerCase();
-  return s.includes(q.toLowerCase());
-}
-
-function getVisible() {
-  return flat.filter(it => (currentGroup === "All" || it.game === currentGroup) && matchesQuery(it, currentQuery));
-}
-
-function copy(text) {
-  navigator.clipboard.writeText(text).catch(() => {});
-}
-
-function buildLoadstring(url) {
-  return `loadstring(game:HttpGet("${url}"))()`;
-}
-
-function render() {
-  grid.innerHTML = "";
-  const items = getVisible();
-  for (const it of items) {
-    const node = cardTpl.content.cloneNode(true);
-    node.querySelector(".icon").textContent = it.icon || "📄";
-    node.querySelector(".title").textContent = it.name;
-    node.querySelector(".desc").textContent = it.desc || "";
-    node.querySelector(".meta").textContent = it.game;
-
-    const actions = node.querySelector(".actions");
-    actions.addEventListener("click", ev => {
-      const btn = ev.target.closest("button");
-      if (!btn) return;
-      const action = btn.getAttribute("data-action");
-      if (action === "open") {
-        window.open(it.url, "_blank", "noopener,noreferrer");
-      } else if (action === "copy-url") {
-        copy(it.url);
-      } else if (action === "copy-loadstring") {
-        copy(buildLoadstring(it.url));
-      }
-    });
-
-    grid.appendChild(node);
-  }
-}
-
-searchEl.addEventListener("input", e => {
-  currentQuery = e.target.value || "";
-  render();
-});
-
-(async function init() {
-  catalog = await loadCatalog();
-  flat = Object.entries(catalog).flatMap(([g, arr]) => arr.map(x => ({ ...x, game: g })));
-  if (!flat.length) {
-    catalog = { Universal: [{ name: "Example", url: "https://raw.githubusercontent.com/pgdj6dg/hub/main/example.lua", desc: "Example script", icon: "🧪" }] };
-    flat = [{ name: "Example", url: "https://raw.githubusercontent.com/pgdj6dg/hub/main/example.lua", desc: "Example script", icon: "🧪", game: "Universal" }];
-  }
-  rebuildGroups();
-  render();
-})();
+if CATALOG[SELECT] and CATALOG[SELECT].url then
+ run(CATALOG[SELECT].url)
+end
