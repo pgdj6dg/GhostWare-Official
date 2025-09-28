@@ -1,35 +1,40 @@
-local RF=loadstring(game:HttpGet("[https://sirius.menu/rayfield"))(](https://sirius.menu/rayfield"))())
-local function makeWindow(label)
-  return RF:CreateWindow({
-    Name="Game Scripts",
-    Icon=0,
-    LoadingTitle="Loader",
-    LoadingSubtitle="pgdj6dg",
-    ShowText=label or "Rayfield",
-    Theme="Default",
-    ToggleUIKeybind="K",
-    DisableRayfieldPrompts=false,
-    DisableBuildWarnings=false,
-    ConfigurationSaving={Enabled=false,FolderName=nil,FileName="Cfg"},
-    Discord={Enabled=false,Invite="",RememberJoins=true},
-    KeySystem=false,
-    KeySettings={Title="",Subtitle:"",Note:"",FileName:"",SaveKey=false,GrabKeyFromSite=false,Key={" "}}
-  })
+local ex=(identifyexecutor and identifyexecutor()) or (getexecutorname and getexecutorname()) or ""
+if not tostring(ex):lower():find("xeno") then return end
+
+local Rayfield=loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local Window=Rayfield:CreateWindow({
+  Name="Game Scripts",Icon=0,LoadingTitle="Loader",LoadingSubtitle="pgdj6dg",
+  ShowText="Rayfield",Theme="Default",ToggleUIKeybind="K",
+  DisableRayfieldPrompts=false,DisableBuildWarnings=false,
+  ConfigurationSaving={Enabled=false,FolderName=nil,FileName="Cfg"},
+  Discord={Enabled=false,Invite="",RememberJoins=true},
+  KeySystem=false,KeySettings={Title="",Subtitle:"",Note:"",FileName:"",SaveKey=false,GrabKeyFromSite=false,Key={" "}}
+})
+
+local SCRIPTS={
+  "https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/main/GhostWare%20University",
+  "https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/refs/heads/main/GhostWare%20University"
+}
+local ALLOW={"https://raw.githubusercontent.com/pgdj6dg/"}
+local function allowed(u) for _,p in ipairs(ALLOW) do if u:sub(1,#p)==p then return true end end end
+local function httpget(u)
+  local ok,res=pcall(function() return game:HttpGet(u) end)
+  if ok and type(res)=="string" and #res>0 then return res end
+  if request then local r=request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
+  if http_request then local r=http_request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
+  if syn and syn.request then local r=syn.request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
+end
+local function looksHTML(s) local t=(s or ""):sub(1,200):lower(); return t:find("<html") or t:find("<!doctype") or t:find("</html>") or t:find("404") or t:find("not found") end
+local function run(url,label)
+  if not allowed(url) then Rayfield:Notify({Title="Blocked",Content="URL not allowed",Duration=3}); return end
+  local src=httpget(url) or httpget(url.."?ts="..os.time())
+  if not src or looksHTML(src) then Rayfield:Notify({Title="Error",Content="Fetch failed",Duration=3}); return end
+  local f=loadstring and loadstring(src) or load(src); if not f then Rayfield:Notify({Title="Error",Content="Compile failed",Duration=3}); return end
+  local ok,e=pcall(f); if not ok then Rayfield:Notify({Title="Runtime Error",Content=tostring(e),Duration=3}); return end
+  Rayfield:Notify({Title="Loaded",Content=(label or "Script").." executed",Duration=3})
 end
 
-local Window=makeWindow("Rayfield")
-
-local ALLOW={
-  "[https://raw.githubusercontent.com/pgdj6dg/](https://raw.githubusercontent.com/pgdj6dg/)",
-  "[https://raw.githubusercontent.com/namzikavini/](https://raw.githubusercontent.com/namzikavini/)",
-  "[https://api.luarmor.net/](https://api.luarmor.net/)",
-  "[https://raw.githubusercontent.com/VapeVoidware/](https://raw.githubusercontent.com/VapeVoidware/)",
-  "[https://zaphub.xyz/](https://zaphub.xyz/)",
-  "[https://raw.githubusercontent.com/bloodball/](https://raw.githubusercontent.com/bloodball/)",
-  "[https://raw.githubusercontent.com/LeoKholYt/](https://raw.githubusercontent.com/LeoKholYt/)"
-}
-
-local function allowed(u)
-  for _,p in ipairs(ALLOW) do
-    if u:sub(1,#p)==p then return true end
-  end
+local Tab=Window:CreateTab("Scripts",0)
+Tab:CreateButton({Name="GhostWare University",Callback=function()
+  for _,u in ipairs(SCRIPTS) do if run(u,"GhostWare University") then break end end
+end})
