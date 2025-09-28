@@ -1,36 +1,169 @@
+local HttpService=game:GetService("HttpService")
 local ALLOW={"https://raw.githubusercontent.com/pgdj6dg/","https://gist.githubusercontent.com/pgdj6dg/"}
-local CATALOG={
- {name="SPEEDZ HUB",url="https://raw.githubusercontent.com/pgdj6dg/lolok/main/SPEEDZ%20HUB"},
- {name="GhostWare University",url="https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/main/GhostWare%20University"}
-}
-local SELECT=1
+local CATALOG_URL="https://raw.githubusercontent.com/pgdj6dg/hub/main/hub_catalog.json"
+local TARGET_NAME="GhostWare University"
 
 local function isAllowed(u)
- for _,p in ipairs(ALLOW) do if string.sub(u,1,#p)==p then return true end end
- return false
+    for _,p in ipairs(ALLOW) do if string.sub(u,1,#p)==p then return true end end
+    return false
 end
 
 local function httpget(u)
- local ok,res=pcall(function() return game:HttpGet(u) end)
- if ok and type(res)=="string" and #res>0 then return res end
- if http_request then
-  local r=http_request({Url=u,Method="GET"})
-  if r and r.Body then return r.Body end
- end
- if syn and syn.request then
-  local r=syn.request({Url=u,Method="GET"})
-  if r and r.Body then return r.Body end
- end
- return nil
+    local ok,res=pcall(function() return game:HttpGet(u) end)
+    if ok and type(res)=="string" and #res>0 then return res end
+    if request then local r=request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
+    if http_request then local r=http_request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
+    if syn and syn.request then local r=syn.request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
+    return nil
 end
 
-local function run(u)
- if not isAllowed(u) then return end
- local s=httpget(u); if not s then return end
- local f,err=loadstring(s); if not f then return end
- local ok,e=pcall(f); if not ok then return end
+local function fetchJSON(u)
+    local s=httpget(u); if not s then return nil end
+    local ok,j=pcall(function() return HttpService:JSONDecode(s) end)
+    if ok and type(j)=="table" then return j end
+    return nil
 end
 
-if CATALOG[SELECT] and CATALOG[SELECT].url then
- run(CATALOG[SELECT].url)
+local function runUrl(u)
+    if not isAllowed(u) then Rayfield:Notify({Title="Blocked",Content="URL not allowed",Duration=3}); return end
+    local s=httpget(u); if not s then Rayfield:Notify({Title="Error",Content="Fetch failed",Duration=3}); return end
+    local f=loadstring and loadstring(s) or load(s); if not f then Rayfield:Notify({Title="Error",Content="Compile failed",Duration=3}); return end
+    local ok,e=pcall(f); if not ok then Rayfield:Notify({Title="Runtime Error",Content=tostring(e),Duration=3}); return end
+    Rayfield:Notify({Title="Loaded",Content="Script executed",Duration=3})
 end
+
+local function flattenCatalog(cat)
+    local list={}
+    for group,items in pairs(cat) do
+        if type(items)=="table" then
+            for _,it in ipairs(items) do
+                if type(it)=="table" and type(it.Name)=="string" and type(it.Url)=="string" and isAllowed(it.Url) then
+                    table.insert(list,{group=group,name=it.Name,url=it.Url})
+                end
+            end
+        end
+    end
+    table.sort(list,function(a,b) if a.group==b.group then return a.name<b.name else return a.group<b.group end end)
+    return list
+end
+
+local catalog=fetchJSON(CATALOG_URL)
+if not catalog then
+    catalog={Universal={{Name="GhostWare University",Url="https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/refs/heads/main/GhostWare%20University"}}}
+end
+
+local list=flattenCatalog(catalog)
+if #list==0 then
+    list={{group="Universal",name="GhostWare University",url="https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/refs/heads/main/GhostWare%20University"}}
+end
+
+local ScriptsTab=Window:CreateTab("Scripts",0)
+local searchText=""
+local function filtered()
+    if searchText=="" then return list end
+    local out={}
+    local q=string.lower(searchText)
+    for _,it in ipairs(list) do
+        local s=(it.group.." "..it.name)
+        if string.find(string.lower(s),q,1,true) then table.insert(out,it) end
+    end
+    return out
+end
+
+local function names(arr)
+    local t={}
+    for _,it in ipairs(arr) do table.insert(t,("["..it.group.."] "..it.name)) end
+    return t
+end
+
+local current=filtered()
+local selectedIndex=1
+for i,it in ipairs(current) do if it.name==TARGET_NAME then selectedIndex=i break end end
+
+local dd=ScriptsTab:CreateDropdown({
+    Name="Select Script",
+    Options=names(current),
+    CurrentOption=names(current)[selectedIndex] or names(current)[1] or "",
+    MultipleOptions=false,
+    Callback=function(opt)
+        local txt=type(opt)=="table" and opt[1] or opt
+        local labels=names(current)
+        for i,lab in ipairs(labels) do if lab==txt then selectedIndex=i break end end
+    end
+})
+
+ScriptsTab:CreateInput({
+    Name="Search",
+    PlaceholderText="Filter by name/group",
+    RemoveTextAfterFocusLost=false,
+    Callback=function(val)
+        searchText=val or ""
+        current=filtered()
+        if #current==0 then current={{group="None",name="No matches",url=""}} end
+        selectedIndex=1
+        dd:Refresh(names(current),names(current)[selectedIndex] or "")
+    end
+})
+
+ScriptsTab:CreateButton({
+    Name="Run Selected",
+    Callback=function()
+        local it=current[selectedIndex]; if not it or not it.url or it.url=="" then return end
+        runUrl(it.url)
+    end
+})
+
+ScriptsTab:CreateButton({
+    Name="Open Raw + Copy URL",
+    Callback=function()
+        local it=current[selectedIndex]; if not it or not it.url or it.url=="" then return end
+        setclipboard(it.url)
+        Rayfield:Notify({Title="Copied",Content="URL copied to clipboard",Duration=3})
+        if syn and syn.toast then syn.toast_notification("Opening Raw",it.url,3) end
+        if typeof(getgenv)=="function" then end
+    end
+})
+
+local manualUrl=""
+ScriptsTab:CreateInput({
+    Name="Manual URL",
+    PlaceholderText="https://raw.githubusercontent.com/pgdj6dg/...",
+    RemoveTextAfterFocusLost=false,
+    Callback=function(val) manualUrl=val or "" end
+})
+
+ScriptsTab:CreateButton({
+    Name="Run Manual URL",
+    Callback=function()
+        if not manualUrl or manualUrl=="" then Rayfield:Notify({Title="Error",Content="Enter URL",Duration=3}); return end
+        if not isAllowed(manualUrl) then Rayfield:Notify({Title="Blocked",Content="URL not allowed",Duration=3}); return end
+        runUrl(manualUrl)
+    end
+})
+
+local refreshing=false
+local lastRefresh=0
+ScriptsTab:CreateButton({
+    Name="Refresh Catalog",
+    Callback=function()
+        if refreshing then return end
+        local now=tick(); if now-lastRefresh<2 then return end
+        refreshing=true
+        task.spawn(function()
+            local new=fetchJSON(CATALOG_URL)
+            if new then
+                catalog=new
+                list=flattenCatalog(catalog)
+                current=filtered()
+                selectedIndex=1
+                for i,it in ipairs(current) do if it.name==TARGET_NAME then selectedIndex=i break end end
+                dd:Refresh(names(current),names(current)[selectedIndex] or "")
+                Rayfield:Notify({Title="Catalog",Content="Refreshed",Duration=3})
+            else
+                Rayfield:Notify({Title="Catalog",Content="Refresh failed",Duration=3})
+            end
+            lastRefresh=now
+            refreshing=false
+        end)
+    end
+})
