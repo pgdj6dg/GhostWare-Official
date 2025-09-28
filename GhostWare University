@@ -1,10 +1,219 @@
-local Rayfield=loadstring(game:HttpGet("[https://sirius.menu/rayfield"))(](https://sirius.menu/rayfield"))())
-local Window=Rayfield:CreateWindow({
-    Name="Game Scripts",
+local URLs = {
+  Ghost = {
+    name = "GhostWare University",
+    list = {
+      "https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/refs/heads/main/GhostWare%20University",
+      "https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/main/GhostWare%20University",
+    }
+  },
+  Brainrot = {
+    name = "Steal a brainrot",
+    list = {
+      "https://raw.githubusercontent.com/namzikavini/NewAge/refs/heads/main/ScriptPULLsystem.lua",
+      "https://raw.githubusercontent.com/namzikavini/NewAge/main/ScriptPULLsystem.lua",
+    }
+  },
+  N99 = {
+    name = "99 Nights in a Forest",
+    list = {
+      "https://api.luarmor.net/files/v3/loaders/7b49a212373561851fa3bc6b9e4a45c0.lua",
+    }
+  },
+  Ink = {
+    name = "Ink Games",
+    list = {
+      "https://raw.githubusercontent.com/VapeVoidware/VW-Add/main/inkgame.lua",
+    }
+  },
+  PS99 = {
+    name = "Pet Sim 99",
+    list = {
+      "https://zaphub.xyz/Exec",
+    }
+  }
+}
+
+local ALLOW_PREFIXES = {
+  "https://raw.githubusercontent.com/pgdj6dg/",
+  "https://raw.githubusercontent.com/namzikavini/",
+  "https://api.luarmor.net/",
+  "https://raw.githubusercontent.com/VapeVoidware/",
+  "https://zaphub.xyz/",
+  "https://raw.githubusercontent.com/bloodball/",
+  "https://raw.githubusercontent.com/LeoKholYt/"
+}
+
+local function isAllowed(u)
+  for _,p in ipairs(ALLOW_PREFIXES) do
+    if string.sub(u,1,#p)==p then return true end
+  end
+  return false
+end
+
+local function httpget(u)
+  local ok,res=pcall(function() return game:HttpGet(u) end)
+  if ok and type(res)=="string" and #res>0 then return res end
+  if request then local r=request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
+  if http_request then local r=http_request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
+  if syn and syn.request then local r=syn.request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
+  return nil
+end
+
+local function looksHTML(s)
+  local t=(s or ""):sub(1,200):lower()
+  return t:find("<!doctype") or t:find("<html") or t:find("</html>") or t:find("404") or t:find("not found")
+end
+
+local Rayfield, Window
+local function runMulti(urls,label)
+  local src
+  for i,u in ipairs(urls) do
+    if not isAllowed(u) then continue end
+    src = httpget(u)
+    if (not src) or looksHTML(src) then
+      src = httpget(u .. "?ts=" .. os.time())
+    end
+    if src and not looksHTML(src) then break end
+    src = nil
+  end
+  if not src then
+    if Rayfield then Rayfield:Notify({Title="Error",Content="Fetch failed for "..label,Duration=3}) end
+    return
+  end
+  local f = (loadstring and loadstring(src)) or load(src)
+  if not f then
+    if Rayfield then Rayfield:Notify({Title="Error",Content="Compile failed for "..label,Duration=3}) end
+    return
+  end
+  local ok,err = pcall(f)
+  if not ok then
+    if Rayfield then Rayfield:Notify({Title="Runtime Error",Content=tostring(err),Duration=3}) end
+    return
+  end
+  if Rayfield then Rayfield:Notify({Title="Loaded",Content=label.." executed",Duration=3}) end
+end
+
+local function mm2_inline()
+  local cg=game:GetService("CoreGui")
+  for _,v in ipairs(cg:GetChildren()) do if v.Name=="Discord" or v:FindFirstChild("MurdLabel") then v:Destroy() end end
+  local uiRoot=(gethui and gethui()) or cg
+  local sg=Instance.new("ScreenGui"); sg.ResetOnSpawn=false; sg.Parent=uiRoot
+  local ImageLabel=Instance.new("ImageLabel"); ImageLabel.Image=""; ImageLabel.BackgroundTransparency=1; ImageLabel.Position=UDim2.new(.5,0,.1,0); ImageLabel.AnchorPoint=Vector2.new(.5,.1); ImageLabel.Size=UDim2.new(.1,0,.2,0); ImageLabel.Name="MurdLabel"; ImageLabel.Parent=sg
+  local Part=Instance.new("Part",workspace); Part.Name="Running Part"; Part.Position=Vector3.new(0,1000,0); Part.Anchored=true; Part.CanCollide=true; Part.Size=Vector3.new(5,1,5)
+  local Players=game:GetService("Players"); local Plr=Players.LocalPlayer
+  local function GetMurderer()
+    for _,v in ipairs(Players:GetPlayers()) do
+      local bp=v:FindFirstChild("Backpack"); local ch=v.Character
+      if (bp and bp:FindFirstChild("Knife")) or (ch and ch:FindFirstChild("Knife")) then return ch end
+    end
+    return nil
+  end
+  local DiscordLib=loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/discord"))()
+  local win=DiscordLib:Window("Murder Mystery 2")
+  local serv=win:Server("ByteHub","http://www.roblox.com/asset/?id=6031075938")
+  local function Channel(n) return serv:Channel(tostring(n)) end
+  local function Button(Tab,Text,Callback) return Tab:Button(tostring(Text),Callback) end
+  local function Toggle(Tab,Text,Default,Callback) return Tab:Toggle(tostring(Text),Default,Callback) end
+  local Main=Channel("Main"); local Main2=Channel("Game"); local G=Channel("UI")
+  local Rep=game:GetService("ReplicatedStorage")
+  local SayMessageRequest=Rep:FindFirstChild("DefaultChatSystemChatEvents") and Rep.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
+
+  Button(Main,"Murderer & Sherrif Finder",function()
+    local a=Players:GetPlayers()
+    for i=#a,1,-1 do if a[i]==Plr then table.remove(a,i) break end end
+    for _,v in ipairs(a) do
+      local hasGun=(v.Backpack and v.Backpack:FindFirstChild("Gun")) or (v.Character and v.Character:FindFirstChild("Gun"))
+      local hasKnife=(v.Backpack and v.Backpack:FindFirstChild("Knife")) or (v.Character and v.Character:FindFirstChild("Knife"))
+      if hasGun then
+        if SayMessageRequest and CMS then SayMessageRequest:FireServer(v.DisplayName.." is sherrif.","normalchat") else DiscordLib:Notification("Sherrif Found!",v.DisplayName.." is sherrif","Okay") end
+      elseif hasKnife then
+        if SayMessageRequest and CMS then SayMessageRequest:FireServer(v.DisplayName.." is murderer.","normalchat") else DiscordLib:Notification("Murderer Found!",v.DisplayName.." is murderer.","Okay") end
+      end
+    end
+  end)
+
+  Button(Main,"Kill All (Murderer Only)",function()
+    for _,v in ipairs(Players:GetPlayers()) do
+      if Plr.Backpack:FindFirstChild("Knife") then Plr.Backpack.Knife.Parent=Plr.Character end
+      if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+        Plr.Character.HumanoidRootPart.CFrame=v.Character.HumanoidRootPart.CFrame
+        local k=Plr.Character:FindFirstChild("Knife"); if k and k:FindFirstChild("Stab") then k.Stab:FireServer("Slash") end
+        task.wait(.25)
+      end
+    end
+  end)
+
+  Button(Main,"Teleport To Lobby",function()
+    local ok,spawn=pcall(function() return workspace.Lobby.Spawns.Spawn.CFrame end)
+    if ok and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then Plr.Character.HumanoidRootPart.CFrame=spawn end
+  end)
+
+  Button(G,"Center UI",function()
+    local d=cg:FindFirstChild("Discord"); if d and d:FindFirstChild("MainFrame") then d.MainFrame.Position=UDim2.new(.5,0,.5,0); d.MainFrame.AnchorPoint=Vector2.new(.5,.5) end
+  end)
+
+  Button(Main,"Grab Gun",function()
+    pcall(function()
+      if workspace:FindFirstChild("GunDrop") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+        Plr.Character.HumanoidRootPart.CFrame=workspace.GunDrop.CFrame
+      end
+    end)
+  end)
+
+  Button(Main,"Teleport to murderer",function()
+    local m=GetMurderer()
+    if m and m:FindFirstChild("HumanoidRootPart") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+      Plr.Character.HumanoidRootPart.CFrame=m.HumanoidRootPart.CFrame
+    end
+  end)
+
+  Button(Main2,"Rejoin",function() game:GetService("TeleportService"):Teleport(game.PlaceId,Plr) end)
+
+  Button(Main2,"Serverhop",function()
+    local module=loadstring(game:HttpGet("https://raw.githubusercontent.com/LeoKholYt/roblox/main/lk_serverhop.lua"))()
+    module:Teleport(game.PlaceId)
+  end)
+
+  Button(Main2,"Remove lights",function()
+    local ok,l=pcall(function() return workspace.Normal.Map.Parts.Light end)
+    if ok and l then l:ClearAllChildren() end
+  end)
+
+  Toggle(Main,"Auto Escape Murderer",false,function(s) AE=s end)
+  Toggle(Main,"Auto Shoot Murderer",false,function(s) ASM=s end)
+  Toggle(Main,"Auto Take Gun",false,function(s) ATG=s end)
+  Toggle(Main,"Chat Murderer and Sherrif Finder's results",false,function(s) CMS=s end)
+
+  workspace.ChildAdded:Connect(function(child)
+    if child.Name=="GunDrop" and ATG then
+      local m=GetMurderer()
+      if m and m:FindFirstChild("Head") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
+        while child.Parent and task.wait() do
+          local okDist,dist=pcall(function() return (m.Head.Position-child.Position).Magnitude end)
+          if not okDist then break end
+          if dist<10 then repeat task.wait() okDist,dist=pcall(function() return (m.Head.Position-child.Position).Magnitude end) until okDist and dist>10 end
+          Plr.Character.HumanoidRootPart.CFrame=child.CFrame+Vector3.new(0,.5,0)
+        end
+      end
+    end
+  end)
+end
+
+local currentShowText = "Rayfield"
+local building = false
+
+local function BuildWindow(showText)
+  if building then return end
+  building = true
+  currentShowText = showText or currentShowText
+
+  Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+  Window = Rayfield:CreateWindow({
+    Name="GhostWare University",
     Icon=0,
     LoadingTitle="Loader",
     LoadingSubtitle="pgdj6dg",
-    ShowText="GhostWare University",
+    ShowText=GhostWare University,
     Theme="Default",
     ToggleUIKeybind="K",
     DisableRayfieldPrompts=false,
@@ -13,193 +222,50 @@ local Window=Rayfield:CreateWindow({
     Discord={Enabled=false,Invite="",RememberJoins=true},
     KeySystem=false,
     KeySettings={Title="",Subtitle:"",Note:"",FileName:"",SaveKey=false,GrabKeyFromSite=false,Key={" "}}
-})
+  })
 
-local ALLOW={
-    "[https://raw.githubusercontent.com/pgdj6dg/](https://raw.githubusercontent.com/pgdj6dg/)",
-    "[https://gist.githubusercontent.com/pgdj6dg/](https://gist.githubusercontent.com/pgdj6dg/)",
-    "[https://raw.githubusercontent.com/namzikavini/](https://raw.githubusercontent.com/namzikavini/)",
-    "[https://api.luarmor.net/](https://api.luarmor.net/)",
-    "[https://raw.githubusercontent.com/VapeVoidware/](https://raw.githubusercontent.com/VapeVoidware/)",
-    "[https://zaphub.xyz/](https://zaphub.xyz/)"
-}
-local function isAllowed(u)
-    for _,p in ipairs(ALLOW) do if string.sub(u,1,#p)==p then return true end end
-    return false
-end
-local function httpget(u)
-    local ok,res=pcall(function() return game:HttpGet(u) end)
-    if ok and type(res)=="string" and #res>0 then return res end
-    if request then local r=request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
-    if http_request then local r=http_request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
-    if syn and syn.request then local r=syn.request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
-    return nil
-end
-local function runUrl(u,label)
-    if not isAllowed(u) then Rayfield:Notify({Title="Blocked",Content="URL not allowed",Duration=3}); return end
-    local s=httpget(u); if not s then Rayfield:Notify({Title="Error",Content="Fetch failed",Duration=3}); return end
-    local f=loadstring and loadstring(s) or load(s); if not f then Rayfield:Notify({Title="Error",Content="Compile failed",Duration=3}); return end
-    local ok,e=pcall(f); if not ok then Rayfield:Notify({Title="Runtime Error",Content=tostring(e),Duration=3}); return end
-    Rayfield:Notify({Title="Loaded",Content=(label or "Script").." executed",Duration=3})
-end
+  local Tab=Window:CreateTab("Scripts",0)
 
-local URL_GHOST="[https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/main/GhostWare%20University](https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/main/GhostWare%20University)"
-local URL_BRAINROT="[https://raw.githubusercontent.com/namzikavini/NewAge/refs/heads/main/ScriptPULLsystem.lua](https://raw.githubusercontent.com/namzikavini/NewAge/refs/heads/main/ScriptPULLsystem.lua)"
-local URL_99NIGHTS="[https://api.luarmor.net/files/v3/loaders/7b49a212373561851fa3bc6b9e4a45c0.lua](https://api.luarmor.net/files/v3/loaders/7b49a212373561851fa3bc6b9e4a45c0.lua)"
-local URL_INK="[https://raw.githubusercontent.com/VapeVoidware/VW-Add/main/inkgame.lua](https://raw.githubusercontent.com/VapeVoidware/VW-Add/main/inkgame.lua)"
-local URL_PETSIM99="[https://zaphub.xyz/Exec](https://zaphub.xyz/Exec)"
+  local function setShowTextAndRun(label, runner)
+    if Rayfield and Rayfield.ChangeShowText then
+      Rayfield:ChangeShowText(label)
+      currentShowText = label
+    else
+      if Rayfield and Rayfield.Destroy then Rayfield:Destroy() end
+      building = false
+      BuildWindow(label)
+      building = false
+      task.defer(runner)
+      return
+    end
+    task.defer(runner)
+  end
 
-local function mm2_inline()
-    local okMM2=true
-    okMM2=okMM2 and game:GetService("Players")~=nil
-    if not okMM2 then Rayfield:Notify({Title="MM2",Content="Not supported in this game",Duration=3}); return end
+  Tab:CreateButton({Name=URLs.Ghost.name,Callback=function()
+    setShowTextAndRun(URLs.Ghost.name,function() runMulti(URLs.Ghost.list,URLs.Ghost.name) end)
+  end})
 
-    pcall(function()
-        for _,v in ipairs(game:GetService("CoreGui"):GetChildren()) do
-            if v.Name=="Discord" or v:FindFirstChild("MurdLabel") then v:Destroy() end
-        end
-        local uiRoot=(gethui and gethui()) or game:GetService("CoreGui")
-        local sg=Instance.new("ScreenGui"); sg.ResetOnSpawn=false; sg.Parent=uiRoot
-        local ImageLabel=Instance.new("ImageLabel"); ImageLabel.Image=""; ImageLabel.BackgroundTransparency=1; ImageLabel.Position=UDim2.new(.5,0,.1,0); ImageLabel.AnchorPoint=Vector2.new(.5,.1); ImageLabel.Size=UDim2.new(.1,0,.2,0); ImageLabel.Name="MurdLabel"; ImageLabel.Parent=sg
-        local Part=Instance.new("Part",workspace); Part.Name="Running Part"; Part.Position=Vector3.new(0,1000,0); Part.Anchored=true; Part.CanCollide=true; Part.Size=Vector3.new(5,1,5)
-        local Players=game:GetService("Players"); local Plr=Players.LocalPlayer
-        local function GetMurderer()
-            for _,v in ipairs(Players:GetPlayers()) do
-                local bp=v:FindFirstChild("Backpack"); local ch=v.Character
-                if (bp and bp:FindFirstChild("Knife")) or (ch and ch:FindFirstChild("Knife")) then return ch end
-            end
-            return nil
-        end
-        local DiscordLib=loadstring(game:HttpGet("[https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/discord"))(](https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/discord"))())
-        local win=DiscordLib:Window("Murder Mystery 2")
-        local serv=win:Server("ByteHub","[http://www.roblox.com/asset/?id=6031075938](http://www.roblox.com/asset/?id=6031075938)")
-        local function Channel(n) return serv:Channel(tostring(n)) end
-        local function Button(Tab,Text,Callback) return Tab:Button(tostring(Text),Callback) end
-        local function Toggle(Tab,Text,Default,Callback) return Tab:Toggle(tostring(Text),Default,Callback) end
-        local Main=Channel("Main"); local Main2=Channel("Game"); local G=Channel("UI")
-        local SayMessageRequest=game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents and game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest
+  Tab:CreateButton({Name=URLs.Brainrot.name,Callback=function()
+    setShowTextAndRun(URLs.Brainrot.name,function() runMulti(URLs.Brainrot.list,URLs.Brainrot.name) end)
+  end})
 
-        Button(Main,"Murderer & Sherrif Finder",function()
-            local a=Players:GetPlayers()
-            for i=#a,1,-1 do if a[i]==Plr then table.remove(a,i) break end end
-            for _,v in ipairs(a) do
-                local hasGun=(v.Backpack and v.Backpack:FindFirstChild("Gun")) or (v.Character and v.Character:FindFirstChild("Gun"))
-                local hasKnife=(v.Backpack and v.Backpack:FindFirstChild("Knife")) or (v.Character and v.Character:FindFirstChild("Knife"))
-                if hasGun then
-                    if SayMessageRequest and CMS then SayMessageRequest:FireServer(v.DisplayName.." is sherrif.","normalchat") else DiscordLib:Notification("Sherrif Found!",v.DisplayName.." is sherrif","Okay") end
-                elseif hasKnife then
-                    if SayMessageRequest and CMS then SayMessageRequest:FireServer(v.DisplayName.." is murderer.","normalchat") else DiscordLib:Notification("Murderer Found!",v.DisplayName.." is murderer.","Okay") end
-                end
-            end
-        end)
+  Tab:CreateButton({Name=URLs.N99.name,Callback=function()
+    setShowTextAndRun(URLs.N99.name,function() runMulti(URLs.N99.list,URLs.N99.name) end)
+  end})
 
-        Button(Main,"Kill All (Murderer Only)",function()
-            for _,v in ipairs(Players:GetPlayers()) do
-                if Plr.Backpack:FindFirstChild("Knife") then Plr.Backpack.Knife.Parent=Plr.Character end
-                if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-                    Plr.Character.HumanoidRootPart.CFrame=v.Character.HumanoidRootPart.CFrame
-                    local k=Plr.Character:FindFirstChild("Knife"); if k and k:FindFirstChild("Stab") then k.Stab:FireServer("Slash") end
-                    task.wait(.25)
-                end
-            end
-        end)
+  Tab:CreateButton({Name=URLs.Ink.name,Callback=function()
+    setShowTextAndRun(URLs.Ink.name,function() runMulti(URLs.Ink.list,URLs.Ink.name) end)
+  end})
 
-        Button(Main,"Teleport To Lobby",function()
-            local ok,spawn=pcall(function() return workspace.Lobby.Spawns.Spawn.CFrame end)
-            if ok and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then Plr.Character.HumanoidRootPart.CFrame=spawn end
-        end)
+  Tab:CreateButton({Name=URLs.PS99.name,Callback=function()
+    setShowTextAndRun(URLs.PS99.name,function() runMulti(URLs.PS99.list,URLs.PS99.name) end)
+  end})
 
-        Button(G,"Center UI",function()
-            local d=game:GetService("CoreGui"):FindFirstChild("Discord"); if d and d:FindFirstChild("MainFrame") then d.MainFrame.Position=UDim2.new(.5,0,.5,0); d.MainFrame.AnchorPoint=Vector2.new(.5,.5) end
-        end)
+  Tab:CreateButton({Name="Murder Mystery 2",Callback=function()
+    setShowTextAndRun("Murder Mystery 2",function() mm2_inline() end)
+  end})
 
-        Button(Main,"Grab Gun",function()
-            pcall(function()
-                if workspace:FindFirstChild("GunDrop") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-                    Plr.Character.HumanoidRootPart.CFrame=workspace.GunDrop.CFrame
-                end
-            end)
-        end)
-
-        Button(Main,"Teleport to murderer",function()
-            local m=GetMurderer()
-            if m and m:FindFirstChild("HumanoidRootPart") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-                Plr.Character.HumanoidRootPart.CFrame=m.HumanoidRootPart.CFrame
-            end
-        end)
-
-        Button(Main2,"Rejoin",function() game:GetService("TeleportService"):Teleport(game.PlaceId,Plr) end)
-
-        Button(Main2,"Serverhop",function()
-            local module=loadstring(game:HttpGet("[https://raw.githubusercontent.com/LeoKholYt/roblox/main/lk_serverhop.lua"))(](https://raw.githubusercontent.com/LeoKholYt/roblox/main/lk_serverhop.lua"))())
-            module:Teleport(game.PlaceId)
-        end)
-
-        Button(Main2,"Remove lights",function()
-            local ok,l=pcall(function() return workspace.Normal.Map.Parts.Light end)
-            if ok and l then l:ClearAllChildren() end
-        end)
-
-        Toggle(Main,"Auto Escape Murderer",false,function(s) AE=s end)
-        Toggle(Main,"Auto Shoot Murderer",false,function(s) ASM=s end)
-        Toggle(Main,"Auto Take Gun",false,function(s) ATG=s end)
-        Toggle(Main,"Chat Murderer and Sherrif Finder's results",false,function(s) CMS=s end)
-
-        workspace.ChildAdded:Connect(function(child)
-            if child.Name=="GunDrop" and ATG then
-                local m=GetMurderer()
-                if m and m:FindFirstChild("Head") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-                    while child.Parent and task.wait() do
-                        local okDist,dist=pcall(function() return (m.Head.Position-child.Position).Magnitude end)
-                        if not okDist then break end
-                        if dist<10 then repeat task.wait() okDist,dist=pcall(function() return (m.Head.Position-child.Position).Magnitude end) until okDist and dist>10 end
-                        Plr.Character.HumanoidRootPart.CFrame=child.CFrame+Vector3.new(0,.5,0)
-                    end
-                end
-            end
-        end)
-
-        local function GetMurd()
-            local ch=GetMurderer(); if not ch then return nil end
-            return Players:GetPlayerFromCharacter(ch)
-        end
-        local function MurdererLoop()
-            local m=GetMurderer()
-            if ASM and Plr.Character and m and ((Plr.Character:FindFirstChild("Gun")) or (Plr.Backpack and Plr.Backpack:FindFirstChild("Gun"))) then
-                if Plr.Backpack:FindFirstChild("Gun") then Plr.Backpack.Gun.Parent=Plr.Character end
-                if m:FindFirstChild("HumanoidRootPart") and Plr.Character:FindFirstChild("HumanoidRootPart") then
-                    Plr.Character.HumanoidRootPart.CFrame=m.HumanoidRootPart.CFrame - m.Head.CFrame.LookVector*10
-                    local gun=Plr.Character:FindFirstChild("Gun")
-                    if gun and gun:FindFirstChild("KnifeServer") and gun.KnifeServer:FindFirstChild("ShootGun") then
-                        pcall(function() gun.KnifeServer.ShootGun:InvokeServer(1,m.HumanoidRootPart.Position,"AH") end)
-                    end
-                end
-            end
-        end
-        local function SecondLoop()
-            local m=GetMurderer()
-            if not AE or not m or m==Plr.Character then ImageLabel.Image="" return end
-            local p=GetMurd()
-            if p then
-                local ok,thumb=pcall(function() return Players:GetUserThumbnailAsync(p.UserId,Enum.ThumbnailType.AvatarThumbnail,Enum.ThumbnailSize.Size150x150) end)
-                if ok then ImageLabel.Image=thumb end
-            end
-            if m:FindFirstChild("HumanoidRootPart") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-                local dist=(m.HumanoidRootPart.Position-Plr.Character.HumanoidRootPart.Position).Magnitude
-                if dist<15 then
-                    tpedtoPos=tpedtoPos or Plr.Character.HumanoidRootPart.CFrame
-                    Plr.Character.HumanoidRootPart.CFrame=Part.CFrame+Vector3.new(0,3,0)
-                elseif tpedtoPos then
-                    Plr.Character.HumanoidRootPart.CFrame=tpedtoPos
-                    tpedtoPos=nil
-                end
-            end
-        end
-        game:GetService("RunService").Heartbeat:Connect(MurdererLoop)
-        game:GetService("RunService").Heartbeat:Connect(SecondLoop)
-        local d=game:GetService("CoreGui"):FindFirstChild("Discord"); if d then d.DisplayOrder=-1 end
-    end)
+  building = false
 end
 
-local Tab=Window:CreateTab("Scripts",0)
-Tab:CreateButton({Name="GhostWare University",Callback=function() runUrl(URL_GHOST,"Ghost
+BuildWindow(currentShowText)
