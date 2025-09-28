@@ -1,6 +1,3 @@
-local ex=(identifyexecutor and identifyexecutor()) or (getexecutorname and getexecutorname()) or ""
-if not string.find(string.lower(tostring(ex)),"xeno") then return end
-
 local Rayfield=loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local Window=Rayfield:CreateWindow({
     Name="GhostWare",
@@ -18,7 +15,12 @@ local Window=Rayfield:CreateWindow({
     KeySettings={Title="",Subtitle="",Note="",FileName="",SaveKey=false,GrabKeyFromSite=false,Key={" "}}
 })
 
-local URL="https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/refs/heads/main/GhostWare%20University"
+local ALLOW={"https://raw.githubusercontent.com/pgdj6dg/","https://gist.githubusercontent.com/pgdj6dg/","https://raw.githubusercontent.com/hehehe9028/"}
+local function isAllowed(u)
+    for _,p in ipairs(ALLOW) do if string.sub(u,1,#p)==p then return true end end
+    return false
+end
+
 local function httpget(u)
     local ok,res=pcall(function() return game:HttpGet(u) end)
     if ok and type(res)=="string" and #res>0 then return res end
@@ -27,15 +29,18 @@ local function httpget(u)
     if syn and syn.request then local r=syn.request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
     return nil
 end
-local function run(u)
+
+local function run(u,name)
+    if not isAllowed(u) then Rayfield:Notify({Title="Blocked",Content="URL not allowed",Duration=3}); return end
     local s=httpget(u); if not s then Rayfield:Notify({Title="Error",Content="Fetch failed",Duration=3}); return end
     local f=loadstring and loadstring(s) or load(s); if not f then Rayfield:Notify({Title="Error",Content="Compile failed",Duration=3}); return end
     local ok,e=pcall(f); if not ok then Rayfield:Notify({Title="Runtime Error",Content=tostring(e),Duration=3}); return end
-    Rayfield:Notify({Title="Loaded",Content="GhostWare University executed",Duration=3})
+    Rayfield:Notify({Title="Loaded",Content=(name or "Script").." executed",Duration=3})
 end
 
+local GHOST="https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/refs/heads/main/GhostWare%20University"
+local LAWStealaBrainrot="https://raw.githubusercontent.com/hehehe9028/LAWSHUB-brainrot-spawner/refs/heads/main/LAWSHUB%20brainrot%20spawner%20visual"
+
 local Tab=Window:CreateTab("Scripts",0)
-Tab:CreateButton({
-    Name="GhostWare University",
-    Callback=function() run(URL) end
-})
+Tab:CreateButton({Name="GhostWare University",Callback=function() run(GHOST,"GhostWare University") end})
+Tab:CreateButton({Name="LAWSHUB brainrot spawner visual",Callback=function() run(LAWS,"LAWSHUB brainrot spawner visual") end})
