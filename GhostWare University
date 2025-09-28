@@ -1,219 +1,11 @@
-local URLs = {
-  Ghost = {
-    name = "GhostWare University",
-    list = {
-      "https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/refs/heads/main/GhostWare%20University",
-      "https://raw.githubusercontent.com/pgdj6dg/GhostWare-Official/main/GhostWare%20University",
-    }
-  },
-  Brainrot = {
-    name = "Steal a brainrot",
-    list = {
-      "https://raw.githubusercontent.com/namzikavini/NewAge/refs/heads/main/ScriptPULLsystem.lua",
-      "https://raw.githubusercontent.com/namzikavini/NewAge/main/ScriptPULLsystem.lua",
-    }
-  },
-  N99 = {
-    name = "99 Nights in a Forest",
-    list = {
-      "https://api.luarmor.net/files/v3/loaders/7b49a212373561851fa3bc6b9e4a45c0.lua",
-    }
-  },
-  Ink = {
-    name = "Ink Games",
-    list = {
-      "https://raw.githubusercontent.com/VapeVoidware/VW-Add/main/inkgame.lua",
-    }
-  },
-  PS99 = {
-    name = "Pet Sim 99",
-    list = {
-      "https://zaphub.xyz/Exec",
-    }
-  }
-}
-
-local ALLOW_PREFIXES = {
-  "https://raw.githubusercontent.com/pgdj6dg/",
-  "https://raw.githubusercontent.com/namzikavini/",
-  "https://api.luarmor.net/",
-  "https://raw.githubusercontent.com/VapeVoidware/",
-  "https://zaphub.xyz/",
-  "https://raw.githubusercontent.com/bloodball/",
-  "https://raw.githubusercontent.com/LeoKholYt/"
-}
-
-local function isAllowed(u)
-  for _,p in ipairs(ALLOW_PREFIXES) do
-    if string.sub(u,1,#p)==p then return true end
-  end
-  return false
-end
-
-local function httpget(u)
-  local ok,res=pcall(function() return game:HttpGet(u) end)
-  if ok and type(res)=="string" and #res>0 then return res end
-  if request then local r=request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
-  if http_request then local r=http_request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
-  if syn and syn.request then local r=syn.request({Url=u,Method="GET"}); if r and r.Body and #r.Body>0 then return r.Body end end
-  return nil
-end
-
-local function looksHTML(s)
-  local t=(s or ""):sub(1,200):lower()
-  return t:find("<!doctype") or t:find("<html") or t:find("</html>") or t:find("404") or t:find("not found")
-end
-
-local Rayfield, Window
-local function runMulti(urls,label)
-  local src
-  for i,u in ipairs(urls) do
-    if not isAllowed(u) then continue end
-    src = httpget(u)
-    if (not src) or looksHTML(src) then
-      src = httpget(u .. "?ts=" .. os.time())
-    end
-    if src and not looksHTML(src) then break end
-    src = nil
-  end
-  if not src then
-    if Rayfield then Rayfield:Notify({Title="Error",Content="Fetch failed for "..label,Duration=3}) end
-    return
-  end
-  local f = (loadstring and loadstring(src)) or load(src)
-  if not f then
-    if Rayfield then Rayfield:Notify({Title="Error",Content="Compile failed for "..label,Duration=3}) end
-    return
-  end
-  local ok,err = pcall(f)
-  if not ok then
-    if Rayfield then Rayfield:Notify({Title="Runtime Error",Content=tostring(err),Duration=3}) end
-    return
-  end
-  if Rayfield then Rayfield:Notify({Title="Loaded",Content=label.." executed",Duration=3}) end
-end
-
-local function mm2_inline()
-  local cg=game:GetService("CoreGui")
-  for _,v in ipairs(cg:GetChildren()) do if v.Name=="Discord" or v:FindFirstChild("MurdLabel") then v:Destroy() end end
-  local uiRoot=(gethui and gethui()) or cg
-  local sg=Instance.new("ScreenGui"); sg.ResetOnSpawn=false; sg.Parent=uiRoot
-  local ImageLabel=Instance.new("ImageLabel"); ImageLabel.Image=""; ImageLabel.BackgroundTransparency=1; ImageLabel.Position=UDim2.new(.5,0,.1,0); ImageLabel.AnchorPoint=Vector2.new(.5,.1); ImageLabel.Size=UDim2.new(.1,0,.2,0); ImageLabel.Name="MurdLabel"; ImageLabel.Parent=sg
-  local Part=Instance.new("Part",workspace); Part.Name="Running Part"; Part.Position=Vector3.new(0,1000,0); Part.Anchored=true; Part.CanCollide=true; Part.Size=Vector3.new(5,1,5)
-  local Players=game:GetService("Players"); local Plr=Players.LocalPlayer
-  local function GetMurderer()
-    for _,v in ipairs(Players:GetPlayers()) do
-      local bp=v:FindFirstChild("Backpack"); local ch=v.Character
-      if (bp and bp:FindFirstChild("Knife")) or (ch and ch:FindFirstChild("Knife")) then return ch end
-    end
-    return nil
-  end
-  local DiscordLib=loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/discord"))()
-  local win=DiscordLib:Window("Murder Mystery 2")
-  local serv=win:Server("ByteHub","http://www.roblox.com/asset/?id=6031075938")
-  local function Channel(n) return serv:Channel(tostring(n)) end
-  local function Button(Tab,Text,Callback) return Tab:Button(tostring(Text),Callback) end
-  local function Toggle(Tab,Text,Default,Callback) return Tab:Toggle(tostring(Text),Default,Callback) end
-  local Main=Channel("Main"); local Main2=Channel("Game"); local G=Channel("UI")
-  local Rep=game:GetService("ReplicatedStorage")
-  local SayMessageRequest=Rep:FindFirstChild("DefaultChatSystemChatEvents") and Rep.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
-
-  Button(Main,"Murderer & Sherrif Finder",function()
-    local a=Players:GetPlayers()
-    for i=#a,1,-1 do if a[i]==Plr then table.remove(a,i) break end end
-    for _,v in ipairs(a) do
-      local hasGun=(v.Backpack and v.Backpack:FindFirstChild("Gun")) or (v.Character and v.Character:FindFirstChild("Gun"))
-      local hasKnife=(v.Backpack and v.Backpack:FindFirstChild("Knife")) or (v.Character and v.Character:FindFirstChild("Knife"))
-      if hasGun then
-        if SayMessageRequest and CMS then SayMessageRequest:FireServer(v.DisplayName.." is sherrif.","normalchat") else DiscordLib:Notification("Sherrif Found!",v.DisplayName.." is sherrif","Okay") end
-      elseif hasKnife then
-        if SayMessageRequest and CMS then SayMessageRequest:FireServer(v.DisplayName.." is murderer.","normalchat") else DiscordLib:Notification("Murderer Found!",v.DisplayName.." is murderer.","Okay") end
-      end
-    end
-  end)
-
-  Button(Main,"Kill All (Murderer Only)",function()
-    for _,v in ipairs(Players:GetPlayers()) do
-      if Plr.Backpack:FindFirstChild("Knife") then Plr.Backpack.Knife.Parent=Plr.Character end
-      if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-        Plr.Character.HumanoidRootPart.CFrame=v.Character.HumanoidRootPart.CFrame
-        local k=Plr.Character:FindFirstChild("Knife"); if k and k:FindFirstChild("Stab") then k.Stab:FireServer("Slash") end
-        task.wait(.25)
-      end
-    end
-  end)
-
-  Button(Main,"Teleport To Lobby",function()
-    local ok,spawn=pcall(function() return workspace.Lobby.Spawns.Spawn.CFrame end)
-    if ok and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then Plr.Character.HumanoidRootPart.CFrame=spawn end
-  end)
-
-  Button(G,"Center UI",function()
-    local d=cg:FindFirstChild("Discord"); if d and d:FindFirstChild("MainFrame") then d.MainFrame.Position=UDim2.new(.5,0,.5,0); d.MainFrame.AnchorPoint=Vector2.new(.5,.5) end
-  end)
-
-  Button(Main,"Grab Gun",function()
-    pcall(function()
-      if workspace:FindFirstChild("GunDrop") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-        Plr.Character.HumanoidRootPart.CFrame=workspace.GunDrop.CFrame
-      end
-    end)
-  end)
-
-  Button(Main,"Teleport to murderer",function()
-    local m=GetMurderer()
-    if m and m:FindFirstChild("HumanoidRootPart") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-      Plr.Character.HumanoidRootPart.CFrame=m.HumanoidRootPart.CFrame
-    end
-  end)
-
-  Button(Main2,"Rejoin",function() game:GetService("TeleportService"):Teleport(game.PlaceId,Plr) end)
-
-  Button(Main2,"Serverhop",function()
-    local module=loadstring(game:HttpGet("https://raw.githubusercontent.com/LeoKholYt/roblox/main/lk_serverhop.lua"))()
-    module:Teleport(game.PlaceId)
-  end)
-
-  Button(Main2,"Remove lights",function()
-    local ok,l=pcall(function() return workspace.Normal.Map.Parts.Light end)
-    if ok and l then l:ClearAllChildren() end
-  end)
-
-  Toggle(Main,"Auto Escape Murderer",false,function(s) AE=s end)
-  Toggle(Main,"Auto Shoot Murderer",false,function(s) ASM=s end)
-  Toggle(Main,"Auto Take Gun",false,function(s) ATG=s end)
-  Toggle(Main,"Chat Murderer and Sherrif Finder's results",false,function(s) CMS=s end)
-
-  workspace.ChildAdded:Connect(function(child)
-    if child.Name=="GunDrop" and ATG then
-      local m=GetMurderer()
-      if m and m:FindFirstChild("Head") and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") then
-        while child.Parent and task.wait() do
-          local okDist,dist=pcall(function() return (m.Head.Position-child.Position).Magnitude end)
-          if not okDist then break end
-          if dist<10 then repeat task.wait() okDist,dist=pcall(function() return (m.Head.Position-child.Position).Magnitude end) until okDist and dist>10 end
-          Plr.Character.HumanoidRootPart.CFrame=child.CFrame+Vector3.new(0,.5,0)
-        end
-      end
-    end
-  end)
-end
-
-local currentShowText = "Rayfield"
-local building = false
-
-local function BuildWindow(showText)
-  if building then return end
-  building = true
-  currentShowText = showText or currentShowText
-
-  Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-  Window = Rayfield:CreateWindow({
-    Name="GhostWare University",
+local RF=loadstring(game:HttpGet("[https://sirius.menu/rayfield"))(](https://sirius.menu/rayfield"))())
+local function makeWindow(label)
+  return RF:CreateWindow({
+    Name="Game Scripts",
     Icon=0,
     LoadingTitle="Loader",
     LoadingSubtitle="pgdj6dg",
-    ShowText=GhostWare University,
+    ShowText=label or "Rayfield",
     Theme="Default",
     ToggleUIKeybind="K",
     DisableRayfieldPrompts=false,
@@ -223,49 +15,21 @@ local function BuildWindow(showText)
     KeySystem=false,
     KeySettings={Title="",Subtitle:"",Note:"",FileName:"",SaveKey=false,GrabKeyFromSite=false,Key={" "}}
   })
-
-  local Tab=Window:CreateTab("Scripts",0)
-
-  local function setShowTextAndRun(label, runner)
-    if Rayfield and Rayfield.ChangeShowText then
-      Rayfield:ChangeShowText(label)
-      currentShowText = label
-    else
-      if Rayfield and Rayfield.Destroy then Rayfield:Destroy() end
-      building = false
-      BuildWindow(label)
-      building = false
-      task.defer(runner)
-      return
-    end
-    task.defer(runner)
-  end
-
-  Tab:CreateButton({Name=URLs.Ghost.name,Callback=function()
-    setShowTextAndRun(URLs.Ghost.name,function() runMulti(URLs.Ghost.list,URLs.Ghost.name) end)
-  end})
-
-  Tab:CreateButton({Name=URLs.Brainrot.name,Callback=function()
-    setShowTextAndRun(URLs.Brainrot.name,function() runMulti(URLs.Brainrot.list,URLs.Brainrot.name) end)
-  end})
-
-  Tab:CreateButton({Name=URLs.N99.name,Callback=function()
-    setShowTextAndRun(URLs.N99.name,function() runMulti(URLs.N99.list,URLs.N99.name) end)
-  end})
-
-  Tab:CreateButton({Name=URLs.Ink.name,Callback=function()
-    setShowTextAndRun(URLs.Ink.name,function() runMulti(URLs.Ink.list,URLs.Ink.name) end)
-  end})
-
-  Tab:CreateButton({Name=URLs.PS99.name,Callback=function()
-    setShowTextAndRun(URLs.PS99.name,function() runMulti(URLs.PS99.list,URLs.PS99.name) end)
-  end})
-
-  Tab:CreateButton({Name="Murder Mystery 2",Callback=function()
-    setShowTextAndRun("Murder Mystery 2",function() mm2_inline() end)
-  end})
-
-  building = false
 end
 
-BuildWindow(currentShowText)
+local Window=makeWindow("Rayfield")
+
+local ALLOW={
+  "[https://raw.githubusercontent.com/pgdj6dg/](https://raw.githubusercontent.com/pgdj6dg/)",
+  "[https://raw.githubusercontent.com/namzikavini/](https://raw.githubusercontent.com/namzikavini/)",
+  "[https://api.luarmor.net/](https://api.luarmor.net/)",
+  "[https://raw.githubusercontent.com/VapeVoidware/](https://raw.githubusercontent.com/VapeVoidware/)",
+  "[https://zaphub.xyz/](https://zaphub.xyz/)",
+  "[https://raw.githubusercontent.com/bloodball/](https://raw.githubusercontent.com/bloodball/)",
+  "[https://raw.githubusercontent.com/LeoKholYt/](https://raw.githubusercontent.com/LeoKholYt/)"
+}
+
+local function allowed(u)
+  for _,p in ipairs(ALLOW) do
+    if u:sub(1,#p)==p then return true end
+  end
